@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FamilyPulse — Live Location</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2235;
+    --border: #1e2d45;
+    --accent: #00d4aa;
+    --accent2: #ff6b6b;
+    --text: #e8f0fe;
+    --muted: #6b7fa3;
+    --glow: 0 0 20px rgba(0,212,170,0.3);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(0,212,170,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0,212,170,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .app { position: relative; z-index: 1; max-width: 480px; margin: 0 auto; padding: 20px 16px 100px; }
+
+  /* Header */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 16px 0 24px;
+  }
+
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+  }
+  .logo span { color: var(--accent); }
+
+  .status-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse-dot 2s infinite;
+  }
+  @keyframes pulse-dot {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: 0.5; transform: scale(1.4); }
+  }
+
+  /* Setup Screen */
+  #setupScreen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 70vh;
+    text-align: center;
+    gap: 24px;
+    animation: fadeIn 0.6s ease;
+  }
+
+  .setup-icon {
+    width: 80px; height: 80px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--accent), #00a882);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 36px;
+    box-shadow: var(--glow);
+    animation: float 3s ease-in-out infinite;
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-8px); }
+  }
+
+  .setup-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.2;
+  }
+  .setup-title span { color: var(--accent); }
+
+  .setup-desc {
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.6;
+    max-width: 300px;
+  }
+
+  .input-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+
+  .input-label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--muted);
+    text-align: left;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .styled-input {
+    width: 100%;
+    padding: 14px 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .styled-input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(0,212,170,0.1);
+  }
+  .styled-input::placeholder { color: var(--muted); }
+
+  .color-row {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  .color-btn {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .color-btn.selected {
+    border-color: white;
+    transform: scale(1.2);
+  }
+  .color-btn:hover { transform: scale(1.1); }
+
+  .session-row {
+    width: 100%;
+    display: flex;
+    gap: 10px;
+  }
+
+  .btn-primary {
+    flex: 1;
+    padding: 14px;
+    background: var(--accent);
+    color: #0a0e1a;
+    border: none;
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.1s;
+  }
+  .btn-primary:hover { opacity: 0.9; }
+  .btn-primary:active { transform: scale(0.97); }
+
+  .btn-secondary {
+    flex: 1;
+    padding: 14px;
+    background: var(--surface);
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 14px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .btn-secondary:hover { border-color: var(--accent); }
+
+  /* Main App */
+  #mainScreen { display: none; animation: fadeIn 0.5s ease; }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* My Location Card */
+  .my-card {
+    background: linear-gradient(135deg, var(--accent) 0%, #00a882 100%);
+    border-radius: 20px;
+    padding: 20px;
+    margin-bottom: 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .my-card::before {
+    content: '';
+    position: absolute;
+    top: -30px; right: -30px;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.1);
+  }
+
+  .my-card-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+  }
+  .my-avatar {
+    width: 44px; height: 44px;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.2);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 20px;
+    border: 2px solid rgba(255,255,255,0.3);
+  }
+  .my-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 18px;
+    color: #0a0e1a;
+  }
+  .my-tag {
+    font-size: 12px;
+    color: rgba(0,0,0,0.5);
+    font-weight: 500;
+  }
+
+  .my-coords {
+    font-size: 13px;
+    color: rgba(0,0,0,0.6);
+    font-family: monospace;
+    background: rgba(0,0,0,0.1);
+    padding: 8px 12px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+  }
+
+  .share-btn {
+    width: 100%;
+    padding: 10px;
+    background: rgba(0,0,0,0.2);
+    color: #0a0e1a;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: background 0.2s;
+  }
+  .share-btn:hover { background: rgba(0,0,0,0.3); }
+
+  /* Family Members */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .section-title::after {
+    content: '';
+    flex: 1;
+    height: 1px;
+    background: var(--border);
+  }
+
+  .members-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .member-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    transition: border-color 0.2s, transform 0.2s;
+    animation: slideIn 0.4s ease both;
+  }
+  @keyframes slideIn {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  .member-card:hover { border-color: var(--border); transform: translateX(2px); }
+
+  .member-avatar {
+    width: 48px; height: 48px;
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 22px;
+    flex-shrink: 0;
+    position: relative;
+  }
+  .member-online-dot {
+    position: absolute;
+    bottom: -2px; right: -2px;
+    width: 12px; height: 12px;
+    border-radius: 50%;
+    background: #00d4aa;
+    border: 2px solid var(--surface);
+    animation: pulse-dot 2s infinite;
+  }
+
+  .member-info { flex: 1; min-width: 0; }
+  .member-name {
+    font-family: 'Syne', sans-serif;
+    font-weight: 600;
+    font-size: 15px;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .member-coords {
+    font-size: 12px;
+    color: var(--muted);
+    font-family: monospace;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .member-time {
+    font-size: 11px;
+    color: var(--muted);
+    margin-top: 3px;
+  }
+
+  .map-btn {
+    padding: 8px 14px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--accent);
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.2s;
+    text-decoration: none;
+    display: inline-block;
+  }
+  .map-btn:hover { background: var(--border); }
+
+  /* Empty State */
+  .empty-state {
+    background: var(--surface);
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+    padding: 32px;
+    text-align: center;
+    color: var(--muted);
+  }
+  .empty-state .icon { font-size: 32px; margin-bottom: 10px; }
+  .empty-state p { font-size: 14px; line-height: 1.5; }
+
+  /* Session Code Card */
+  .session-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 16px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+  }
+  .session-info { flex: 1; }
+  .session-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 4px; }
+  .session-code {
+    font-family: 'Syne', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    letter-spacing: 3px;
+    color: var(--accent);
+  }
+  .copy-btn {
+    padding: 8px 16px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    font-size: 13px;
+    cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .copy-btn:hover { border-color: var(--accent); }
+
+  /* Update ticker */
+  .ticker {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+  }
+  .ticker-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse-dot 1.5s infinite;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--accent);
+    color: #0a0e1a;
+    padding: 12px 24px;
+    border-radius: 40px;
+    font-weight: 600;
+    font-size: 14px;
+    z-index: 1000;
+    transition: transform 0.3s ease;
+    white-space: nowrap;
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  .error-msg {
+    color: var(--accent2);
+    font-size: 13px;
+    text-align: center;
+    padding: 8px;
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="logo">Family<span>Pulse</span></div>
+    <div class="status-dot" id="statusDot"></div>
+  </header>
+
+  <!-- SETUP SCREEN -->
+  <div id="setupScreen">
+    <div class="setup-icon">📍</div>
+    <div class="setup-title">Stay Connected<br>with <span>Family</span></div>
+    <div class="setup-desc">Share your live location with family members. Join a session or create a new one.</div>
+
+    <div class="input-group">
+      <div class="input-label">Your Name</div>
+      <input type="text" class="styled-input" id="nameInput" placeholder="e.g. Dad, Mom, Ahmed..." maxlength="20">
+
+      <div class="input-label">Pick Your Color</div>
+      <div class="color-row" id="colorRow"></div>
+
+      <div class="input-label">Session Code (4 digits)</div>
+      <input type="text" class="styled-input" id="sessionInput" placeholder="e.g. 1234 — share with family" maxlength="4" pattern="[0-9]*" inputmode="numeric">
+
+      <div class="session-row">
+        <button class="btn-primary" onclick="startTracking()">📡 Join / Start</button>
+      </div>
+      <div class="error-msg" id="setupError"></div>
+    </div>
+  </div>
+
+  <!-- MAIN SCREEN -->
+  <div id="mainScreen">
+    <div class="session-card">
+      <div class="session-info">
+        <div class="session-label">Session Code</div>
+        <div class="session-code" id="displayCode">----</div>
+      </div>
+      <button class="copy-btn" onclick="copyCode()">📋 Copy</button>
+    </div>
+
+    <div class="my-card" id="myCard">
+      <div class="my-card-header">
+        <div class="my-avatar" id="myAvatar">👤</div>
+        <div>
+          <div class="my-name" id="myNameDisplay">You</div>
+          <div class="my-tag">📡 Broadcasting live</div>
+        </div>
+      </div>
+      <div class="my-coords" id="myCoords">Waiting for GPS...</div>
+      <button class="share-btn" onclick="openMyMap()">🗺️ Open My Location in Maps</button>
+    </div>
+
+    <div class="section-title">Family Members</div>
+    <div class="members-list" id="membersList">
+      <div class="empty-state">
+        <div class="icon">👨‍👩‍👧‍👦</div>
+        <p>No one else yet.<br>Share the session code <strong id="codeInEmpty">----</strong> with your family!</p>
+      </div>
+    </div>
+
+    <div class="ticker">
+      <div class="ticker-dot"></div>
+      <span id="tickerText">Updating every 10 seconds</span>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const COLORS = ['#00d4aa','#ff6b6b','#ffd93d','#6bcbff','#c77dff','#ff9f43','#00b4d8','#f72585'];
+const EMOJIS = { '#00d4aa':'🟢','#ff6b6b':'🔴','#ffd93d':'🟡','#6bcbff':'🔵','#c77dff':'🟣','#ff9f43':'🟠','#00b4d8':'💠','#f72585':'💖' };
+let myColor = COLORS[0];
+let myName = '';
+let sessionCode = '';
+let myLat = null, myLng = null;
+let updateInterval = null;
+let memberKey = '';
+
+// Build color picker
+const colorRow = document.getElementById('colorRow');
+COLORS.forEach((c, i) => {
+  const btn = document.createElement('div');
+  btn.className = 'color-btn' + (i === 0 ? ' selected' : '');
+  btn.style.background = c;
+  btn.onclick = () => {
+    document.querySelectorAll('.color-btn').forEach(b => b.classList.remove('selected'));
+    btn.classList.add('selected');
+    myColor = c;
+  };
+  colorRow.appendChild(btn);
+});
+
+// Storage helpers using window.storage
+async function saveLocation(lat, lng) {
+  const key = `session_${sessionCode}_${memberKey}`;
+  const data = {
+    name: myName,
+    color: myColor,
+    lat, lng,
+    updated: Date.now()
+  };
+  try {
+    await window.storage.set(key, JSON.stringify(data), true);
+  } catch(e) { console.warn('Save failed', e); }
+}
+
+async function loadAllMembers() {
+  const prefix = `session_${sessionCode}_`;
+  try {
+    const result = await window.storage.list(prefix, true);
+    if (!result) return [];
+    const members = [];
+    for (const k of result.keys) {
+      if (k === `session_${sessionCode}_${memberKey}`) continue;
+      try {
+        const r = await window.storage.get(k, true);
+        if (r && r.value) {
+          const m = JSON.parse(r.value);
+          // Only show if updated in last 2 minutes
+          if (Date.now() - m.updated < 120000) {
+            members.push(m);
+          }
+        }
+      } catch(e) {}
+    }
+    return members;
+  } catch(e) { return []; }
+}
+
+async function startTracking() {
+  const nameVal = document.getElementById('nameInput').value.trim();
+  const codeVal = document.getElementById('sessionInput').value.trim();
+  const err = document.getElementById('setupError');
+
+  if (!nameVal) { err.textContent = '⚠️ Please enter your name'; return; }
+  if (!/^\d{4}$/.test(codeVal)) { err.textContent = '⚠️ Session code must be exactly 4 digits'; return; }
+  err.textContent = '';
+
+  myName = nameVal;
+  sessionCode = codeVal;
+  memberKey = Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+
+  if (!navigator.geolocation) {
+    err.textContent = '❌ Geolocation not supported on this device';
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(pos => {
+    myLat = pos.coords.latitude;
+    myLng = pos.coords.longitude;
+    launchApp();
+  }, e => {
+    err.textContent = '❌ Location permission denied. Please allow access.';
+  }, { enableHighAccuracy: true });
+}
+
+function launchApp() {
+  document.getElementById('setupScreen').style.display = 'none';
+  document.getElementById('mainScreen').style.display = 'block';
+
+  document.getElementById('displayCode').textContent = sessionCode;
+  document.getElementById('codeInEmpty').textContent = sessionCode;
+
+  const myAvatar = document.getElementById('myAvatar');
+  myAvatar.textContent = EMOJIS[myColor] || '📍';
+  myAvatar.style.background = myColor + '33';
+
+  document.getElementById('myNameDisplay').textContent = myName;
+  document.getElementById('myCard').style.background =
+    `linear-gradient(135deg, ${myColor} 0%, ${myColor}cc 100%)`;
+
+  updateMyLocation();
+
+  updateInterval = setInterval(() => {
+    updateMyLocation();
+    refreshMembers();
+  }, 10000);
+
+  refreshMembers();
+}
+
+function updateMyLocation() {
+  navigator.geolocation.getCurrentPosition(pos => {
+    myLat = pos.coords.latitude;
+    myLng = pos.coords.longitude;
+    document.getElementById('myCoords').textContent =
+      `📍 ${myLat.toFixed(5)}, ${myLng.toFixed(5)}`;
+    saveLocation(myLat, myLng);
+    document.getElementById('tickerText').textContent =
+      'Last updated: ' + new Date().toLocaleTimeString();
+  }, () => {
+    if (myLat) saveLocation(myLat, myLng);
+  }, { enableHighAccuracy: true });
+}
+
+async function refreshMembers() {
+  const members = await loadAllMembers();
+  const list = document.getElementById('membersList');
+
+  if (members.length === 0) {
+    list.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">👨‍👩‍👧‍👦</div>
+        <p>No one else yet.<br>Share code <strong>${sessionCode}</strong> with your family!</p>
+      </div>`;
+    return;
+  }
+
+  list.innerHTML = members.map((m, i) => {
+    const timeAgo = Math.round((Date.now() - m.updated) / 1000);
+    const timeStr = timeAgo < 60 ? `${timeAgo}s ago` : `${Math.round(timeAgo/60)}m ago`;
+    const emoji = EMOJIS[m.color] || '📍';
+    const mapsUrl = `https://www.google.com/maps?q=${m.lat},${m.lng}`;
+    return `
+      <div class="member-card" style="animation-delay:${i*0.1}s; border-left: 3px solid ${m.color}">
+        <div class="member-avatar" style="background:${m.color}22">
+          <span>${emoji}</span>
+          <div class="member-online-dot" style="background:${m.color}"></div>
+        </div>
+        <div class="member-info">
+          <div class="member-name">${escHtml(m.name)}</div>
+          <div class="member-coords">${Number(m.lat).toFixed(4)}, ${Number(m.lng).toFixed(4)}</div>
+          <div class="member-time">⏱ ${timeStr}</div>
+        </div>
+        <a class="map-btn" href="${mapsUrl}" target="_blank">🗺️ Map</a>
+      </div>`;
+  }).join('');
+}
+
+function openMyMap() {
+  if (myLat && myLng) {
+    window.open(`https://www.google.com/maps?q=${myLat},${myLng}`, '_blank');
+  }
+}
+
+function copyCode() {
+  navigator.clipboard.writeText(sessionCode).then(() => showToast('✅ Code copied!')).catch(() => {
+    showToast('Code: ' + sessionCode);
+  });
+}
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+function escHtml(s) {
+  return s.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>
